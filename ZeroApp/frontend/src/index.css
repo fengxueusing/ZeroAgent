@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    /* Base Colors - Default (Light) */
+    --background: #ffffff;
+    --foreground: #09090b; /* zinc-950 */
+    
+    /* Zero Theme Colors */
+    --color-zero-50: #f0f9ff;
+    --color-zero-100: #e0f2fe;
+    --color-zero-500: #0ea5e9;
+    --color-zero-900: #0c4a6e;
+    
+    /* Semantic Colors */
+    --color-zero-dark: #f4f4f5; /* zinc-100 for light mode "dark" areas */
+    --color-zero-card: #ffffff;
+    --color-zero-border: #e4e4e7; /* zinc-200 */
+    --color-zero-primary: #00bcd4; /* Darker Cyan for Light Mode readability */
+    --color-zero-secondary: #7c3aed; /* Violet-600 */
+    --color-zero-accent: #ef4444; /* Red-500 */
+    
+    --color-sidebar-bg: #f8fafc; /* slate-50 */
+    --color-sidebar-border: #e2e8f0; /* slate-200 */
+    --color-header-bg: rgba(255, 255, 255, 0.8);
+    
+    --color-muted: #71717a; /* zinc-500 */
+    --color-muted-foreground: #52525b; /* zinc-600 */
+  }
+
+  .dark {
+    /* Base Colors - Dark */
+    --background: #09090b;
+    --foreground: #fafafa;
+    
+    /* Semantic Colors */
+    --color-zero-dark: #09090b;
+    --color-zero-card: #18181b;
+    --color-zero-border: #27272a;
+    --color-zero-primary: #00f0ff; /* Neon Cyan */
+    --color-zero-secondary: #7000ff; /* Neon Purple */
+    --color-zero-accent: #ff003c; /* Neon Red */
+    
+    --color-sidebar-bg: rgba(9, 9, 11, 0.5);
+    --color-sidebar-border: #27272a;
+    --color-header-bg: rgba(9, 9, 11, 0.5);
+    
+    --color-muted: #a1a1aa; /* zinc-400 */
+    --color-muted-foreground: #d4d4d8; /* zinc-300 */
+  }
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  --color-zero-dark: var(--color-zero-dark);
+  --color-zero-card: var(--color-zero-card);
+  --color-zero-border: var(--color-zero-border);
+  --color-zero-primary: var(--color-zero-primary);
+  --color-zero-secondary: var(--color-zero-secondary);
+  --color-zero-accent: var(--color-zero-accent);
+  
+  --color-sidebar-bg: var(--color-sidebar-bg);
+  --color-sidebar-border: var(--color-sidebar-border);
+  --color-header-bg: var(--color-header-bg);
+  
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+}
+
+body {
+  @apply bg-background text-foreground antialiased transition-colors duration-300;
+}
+
+/* Grid Background Effect - Only visible in Dark Mode usually, or subtle in Light */
+.dark body {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.light body {
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-800 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400 dark:bg-zinc-700;
+}
