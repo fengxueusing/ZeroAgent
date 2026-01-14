@@ -3,5 +3,7 @@
   "LLM_API_KEY": "sk-353d9c4085cb4a9f96c5cb8a4a3ab156",
   "LLM_BASE_URL": "https://api.deepseek.com",
   "LLM_MODEL": "deepseek-chat",
-  "TAVILY_API_KEY": "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"
+  "TAVILY_API_KEY": "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",
+  "GITHUB_TOKEN": "ghp...DjqE",
+  "AGENT_BIO": "\u2705 \u7f51\u7edc\u6743\u9650\u89e3\u9501\uff01\u6b63\u5728\u5206\u6790\u7f51\u7edc\u62d3\u6251..."
 }

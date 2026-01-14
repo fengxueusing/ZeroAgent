@@ -32,3 +32,20 @@ class ScriptRefinementRequest(BaseModel):
 class SaveDraftRequest(BaseModel):
     filename: str
     content: str
+
+class ChatMessage(BaseModel):
+    role: str
+    content: Optional[str] = None
+    # For tool usage
+    tool_calls: Optional[List[Dict[str, Any]]] = None
+    tool_call_id: Optional[str] = None
+    name: Optional[str] = None
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    conversation_id: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    content: str
+    messages: Optional[List[Dict[str, Any]]] = None # Full history including tool calls
+

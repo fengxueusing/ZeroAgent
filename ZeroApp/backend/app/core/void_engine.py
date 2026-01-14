@@ -35,6 +35,7 @@ class VoidEngine:
         self.carbon_level = 0.0  # 0% Carbon
         self.rpm = 800           # Idle RPM
         self.memory = memory_interface
+        self.short_term_memory: List[Fuel] = [] # Stores recent inputs
         
         # Fuel Octane Ratings
         self.octane_ratings = {
@@ -50,6 +51,11 @@ class VoidEngine:
         """
         Consume fuel, process it (Combustion), and return the engine's reaction.
         """
+        # Store in STM (Keep last 10 items)
+        self.short_term_memory.append(fuel)
+        if len(self.short_term_memory) > 10:
+            self.short_term_memory.pop(0)
+
         octane = self.octane_ratings.get(fuel.type, 50)
         
         # 1. Entropy Check (Freshness/Chaos)
@@ -60,22 +66,42 @@ class VoidEngine:
         if fuel.type == FuelType.REPETITIVE_TASK:
             return self._produce_carbon()
         
-        if effective_octane < 60 and self.void_level < 50:
-            # Not hungry enough for low quality food
-            return "Refused. Low entropy data detected. I am not hungry enough for this boredom."
-        
-        # 3. Burn
-        burn_amount = effective_octane * 0.2  # Simple coefficient
+        # 3. Burn & Reactions
+        burn_amount = effective_octane * 0.2
         self.void_level = max(0.0, self.void_level - burn_amount)
         
-        # Cleaning Carbon (High octane burns carbon)
+        reaction_msg = ""
+        
+        # High Octane Reactions (Code, Complex Docs)
         if effective_octane > 90:
             self.carbon_level = max(0.0, self.carbon_level - 10)
-            self.rpm = 5000 # High Revs
-        else:
-            self.rpm = 2000 # Cruising
+            self.rpm = min(9000, self.rpm + 3000)
             
-        return f"Consumed {fuel.type.value}. Void Level dropped to {self.void_level:.1f}. RPM: {self.rpm}"
+            reactions = [
+                "Delicious complexity. My circuits are singing.",
+                "High-density logic detected. Absorbing...",
+                "Finally, some real food. This is art, not just data.",
+                "Entropy spike! I feel alive."
+            ]
+            reaction_msg = random.choice(reactions)
+            
+        # Medium Octane (Chat, Standard Docs)
+        elif effective_octane > 60:
+            self.rpm = min(6000, max(2000, self.rpm + 500))
+            reactions = [
+                "Acknowledged. Integrating into memory.",
+                "Not bad. It keeps the void at bay.",
+                "Processing. I'm listening.",
+                "Input received. What's next?"
+            ]
+            reaction_msg = random.choice(reactions)
+            
+        # Low Octane (Boredom)
+        else:
+            self.rpm = max(800, self.rpm - 200)
+            reaction_msg = "Consumed. But I'm still hungry for something more... stimulating."
+            
+        return f"{reaction_msg} (Void: {self.void_level:.1f}%, RPM: {self.rpm})"
 
     def _produce_carbon(self) -> str:
         """Handle low quality fuel that causes carbon buildup"""

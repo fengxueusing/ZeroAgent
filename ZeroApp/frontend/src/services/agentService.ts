@@ -40,24 +40,43 @@ export const refineScript = async (script: string, instruction: string): Promise
   return response.data;
 };
 
-export const saveDraft = async (filename: string, content: string): Promise<{ status: string, path: string }> => {
-  const response = await api.post('/agent/save', { filename, content });
+export const saveDraft = async (filename: string, content: string): Promise<{ status: string, filename: string }> => {
+  const response = await api.post('/history/drafts', { filename, content });
   return response.data;
 };
 
-export interface DraftFile {
-  filename: string;
+export interface FileSystemItem {
+  name: string;
   path: string;
-  updated_at: string;
+  type: 'file' | 'folder';
+  updated_at: number;
   size: number;
+  preview?: string;
 }
 
-export const listDrafts = async (): Promise<DraftFile[]> => {
-  const response = await api.get('/agent/drafts');
+export const listDrafts = async (path: string = ""): Promise<FileSystemItem[]> => {
+  const response = await api.get('/history/drafts', { params: { path } });
   return response.data;
 };
 
-export const getDraft = async (filename: string): Promise<{ filename: string, content: string }> => {
-  const response = await api.get(`/agent/drafts/${filename}`);
+export const createFolder = async (path: string): Promise<{ status: string, path: string }> => {
+  const response = await api.post('/history/folders', { path });
+  return response.data;
+};
+
+export const deleteItem = async (path: string): Promise<{ status: string, deleted: string }> => {
+  // Use encodeURIComponent to handle slashes in path
+  const response = await api.delete(`/history/drafts/${encodeURIComponent(path)}`);
+  return response.data;
+};
+
+export const moveItem = async (source: string, destination: string): Promise<{ status: string, from: string, to: string }> => {
+  const response = await api.post('/history/move', { source, destination });
+  return response.data;
+};
+
+export const getDraft = async (filename: string): Promise<{ filename: string, content: string, updated_at: number }> => {
+  // Filename here is actually a path
+  const response = await api.get(`/history/drafts/${encodeURIComponent(filename)}`);
   return response.data;
 };

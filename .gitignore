@@ -24,10 +24,13 @@ wheels/
 # Virtual Environment
 venv/
 .env
+.env.local
 
 # IDE
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
 
 # Database
 *.sqlite3
@@ -40,3 +43,19 @@ temp/
 # Node
 node_modules/
 **/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Project Data (Local & Large Files)
+**/uploads/
+**/conversations/
+**/logs/
+*.log
+
+# Specific Data Files
+ZeroApp/backend/data/user_settings.json
+ZeroApp/backend/data/system_prompt.md.bak
+
+# Root Data Directory (if strictly local)
+data/

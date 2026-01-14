@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
     
+    # Persona Settings
+    AGENT_BIO: str = "I am Zero. Your digital accomplice."
+
     # Void System
     VOID_CHECK_INTERVAL: int = 60  # seconds
 
@@ -40,11 +43,13 @@ class Settings(BaseSettings):
                 with open(settings_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if "LLM_PROVIDER" in data: self.LLM_PROVIDER = data["LLM_PROVIDER"]
-                    if "LLM_API_KEY" in data: self.LLM_API_KEY = data["LLM_API_KEY"]
+                    if "LLM_API_KEY" in data: 
+                        self.LLM_API_KEY = data["LLM_API_KEY"].strip() # Strip whitespace
                     if "LLM_BASE_URL" in data: self.LLM_BASE_URL = data["LLM_BASE_URL"]
                     if "LLM_MODEL" in data: self.LLM_MODEL = data["LLM_MODEL"]
                     if "TAVILY_API_KEY" in data: self.TAVILY_API_KEY = data["TAVILY_API_KEY"]
                     if "GITHUB_TOKEN" in data: self.GITHUB_TOKEN = data["GITHUB_TOKEN"]
+                    if "AGENT_BIO" in data: self.AGENT_BIO = data["AGENT_BIO"]
             except Exception as e:
                 print(f"Failed to load user settings: {e}")
 
@@ -54,7 +59,8 @@ class Settings(BaseSettings):
                           llm_base_url: Optional[str] = None,
                           llm_model: Optional[str] = None,
                           tavily_key: Optional[str] = None,
-                          github_token: Optional[str] = None):
+                          github_token: Optional[str] = None,
+                          agent_bio: Optional[str] = None):
         """Save user overrides to json file"""
         settings_path = os.path.join(os.getcwd(), "data", "user_settings.json")
         
@@ -91,6 +97,10 @@ class Settings(BaseSettings):
         if github_token is not None:
             self.GITHUB_TOKEN = github_token
             data["GITHUB_TOKEN"] = github_token
+
+        if agent_bio is not None:
+            self.AGENT_BIO = agent_bio
+            data["AGENT_BIO"] = agent_bio
 
         # Ensure dir exists
         os.makedirs(os.path.dirname(settings_path), exist_ok=True)

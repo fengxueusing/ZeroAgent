@@ -28,7 +28,8 @@ class LLMFactory:
             
             cls._client = AsyncOpenAI(
                 api_key=current_key,
-                base_url=current_base_url
+                base_url=current_base_url,
+                default_headers={"Authorization": f"Bearer {current_key}"}
             )
             cls._last_key = current_key
             cls._last_base_url = current_base_url

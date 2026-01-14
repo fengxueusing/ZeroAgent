@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.core.config import settings
+import shutil
+import os
 
 router = APIRouter()
 
@@ -12,6 +14,27 @@ class SettingsUpdate(BaseModel):
     llm_model: Optional[str] = None
     tavily_key: Optional[str] = None
     github_token: Optional[str] = None
+    agent_bio: Optional[str] = None
+
+@router.post("/avatar")
+async def upload_avatar(file: UploadFile = File(...)):
+    """
+    Upload and save user avatar
+    """
+    try:
+        # Validate file type (basic)
+        if not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+            
+        file_location = "data/uploads/avatar.png"
+        
+        # Save file
+        with open(file_location, "wb+") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"status": "success", "url": "/static/avatar.png"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/")
 async def get_settings():
@@ -32,7 +55,8 @@ async def get_settings():
         "github_token": mask_key(settings.GITHUB_TOKEN),
         "llm_configured": bool(settings.LLM_API_KEY),
         "tavily_configured": bool(settings.TAVILY_API_KEY),
-        "github_configured": bool(settings.GITHUB_TOKEN)
+        "github_configured": bool(settings.GITHUB_TOKEN),
+        "agent_bio": settings.AGENT_BIO
     }
 
 @router.post("/")
@@ -46,7 +70,8 @@ async def update_settings(data: SettingsUpdate = Body(...)):
         llm_base_url=data.llm_base_url,
         llm_model=data.llm_model,
         tavily_key=data.tavily_key,
-        github_token=data.github_token
+        github_token=data.github_token,
+        agent_bio=data.agent_bio
     )
     return {"status": "updated", "message": "Settings saved successfully"}
 

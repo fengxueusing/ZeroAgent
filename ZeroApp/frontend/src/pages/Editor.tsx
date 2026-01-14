@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Download, ArrowLeft, Wand2, FileText, History, X, Send, Clock, File } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Save, Download, ArrowLeft, Wand2, FileText, History, X, Send, Clock, File, Eye, Edit, Maximize2, Minimize2 } from 'lucide-react';
 import { refineScript, saveDraft, listDrafts, getDraft, DraftFile } from '../services/agentService';
 
 export function Editor() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [content, setContent] = useState('');
+  const [currentFilename, setCurrentFilename] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineInstruction, setRefineInstruction] = useState('');
   
+  // View State
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
   // History State
   const [showHistory, setShowHistory] = useState(false);
   const [drafts, setDrafts] = useState<DraftFile[]>([]);
-
-  useEffect(() => {
-    if (location.state?.script) {
-      setContent(location.state.script);
-    }
-  }, [location.state]);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
 
   const loadDrafts = async () => {
       try {
@@ -34,21 +37,56 @@ export function Editor() {
   };
 
   const handleLoadDraft = async (filename: string) => {
+      console.log("Editor: Loading draft:", filename);
+      setIsLoadingDraft(true);
       try {
-          const { content } = await getDraft(filename);
-          setContent(content);
+          const data = await getDraft(filename);
+          console.log("Editor: Draft loaded:", data);
+          setContent(data.content);
+          setCurrentFilename(data.filename);
           setShowHistory(false);
       } catch (e) {
           console.error("Failed to load draft content", e);
+          alert("Failed to load draft. Please check console.");
+      } finally {
+          setIsLoadingDraft(false);
       }
   };
+
+  // Load from Query Param (Memory Page)
+  useEffect(() => {
+    const fileParam = searchParams.get('file');
+    console.log("Editor: fileParam:", fileParam);
+    if (fileParam) {
+        handleLoadDraft(fileParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (location.state?.script) {
+      console.log("Editor: location.state script found");
+      setContent(location.state.script);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (location.state?.script) {
+      console.log("Editor: location.state script found");
+      setContent(location.state.script);
+    }
+  }, [location.state]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `draft_${timestamp}.md`;
-        await saveDraft(filename, content);
+        let filenameToSave = currentFilename;
+        if (!filenameToSave) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            filenameToSave = `draft_${timestamp}.md`;
+            setCurrentFilename(filenameToSave);
+        }
+        
+        await saveDraft(filenameToSave, content);
         setLastSaved(new Date().toLocaleTimeString());
     } catch (e) {
         console.error('Save failed', e);
@@ -120,7 +158,7 @@ export function Editor() {
                                         <span className="text-sm font-medium text-foreground truncate">{draft.filename}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
-                                        <span>{new Date(draft.updated_at).toLocaleString()}</span>
+                                        <span>{new Date(draft.updated_at * 1000).toLocaleString()}</span>
                                         <span>{(draft.size / 1024).toFixed(1)} KB</span>
                                     </div>
                                 </button>
@@ -183,7 +221,7 @@ export function Editor() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Script Editor</h1>
             <p className="text-xs text-muted-foreground font-mono">
-                WORKSPACE / {lastSaved ? `LAST SAVED: ${lastSaved}` : 'UNSAVED'}
+                {currentFilename ? currentFilename : 'NEW DRAFT'} / {lastSaved ? `LAST SAVED: ${lastSaved}` : 'UNSAVED'}
             </p>
           </div>
         </div>
@@ -221,25 +259,86 @@ export function Editor() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-1 bg-zero-card border border-zero-border rounded-xl shadow-sm overflow-hidden flex flex-col"
+        className={`flex-1 bg-zero-card border border-zero-border rounded-xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ${isFullScreen ? 'fixed inset-4 z-50 shadow-2xl border-zero-primary/30' : ''}`}
       >
         <div className="bg-black/20 border-b border-zero-border p-3 flex items-center justify-between">
            <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-              <span className="flex items-center gap-1"><FileText size={12}/> MARKDOWN MODE</span>
+              <button 
+                onClick={() => setViewMode(viewMode === 'edit' ? 'preview' : 'edit')}
+                className="flex items-center gap-1 hover:text-zero-primary transition-colors"
+              >
+                {viewMode === 'edit' ? <><Eye size={12}/> PREVIEW MODE</> : <><Edit size={12}/> EDIT MODE</>}
+              </button>
+              <span className="w-px h-3 bg-white/10" />
               <span>WORDS: {content.split(/\s+/).filter(w => w.length > 0).length}</span>
               <span>CHARS: {content.length}</span>
            </div>
-           <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-zero-primary transition-colors">
-              <Download size={12} /> EXPORT
-           </button>
+           <div className="flex items-center gap-4">
+               <button 
+                 onClick={() => setIsFullScreen(!isFullScreen)}
+                 className="text-xs flex items-center gap-1 text-muted-foreground hover:text-zero-primary transition-colors"
+                 title={isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+               >
+                  {isFullScreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />} {isFullScreen ? 'EXIT' : 'FULLSCREEN'}
+               </button>
+               <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-zero-primary transition-colors">
+                  <Download size={12} /> EXPORT
+               </button>
+           </div>
         </div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="flex-1 bg-transparent p-8 resize-none focus:outline-none font-mono text-sm leading-relaxed text-foreground/90 selection:bg-zero-primary/30"
-          placeholder="// Start writing or import a script..."
-          spellCheck={false}
-        />
+        {isLoadingDraft ? (
+           <div className="flex-1 flex flex-col items-center justify-center text-zero-primary/50 gap-4">
+              <div className="animate-spin"><Clock size={32} /></div>
+              <p className="font-mono text-xs tracking-widest">DECRYPTING MEMORY...</p>
+           </div>
+        ) : (
+            viewMode === 'edit' ? (
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="flex-1 bg-transparent p-8 resize-none focus:outline-none font-mono text-sm leading-relaxed text-foreground/90 selection:bg-zero-primary/30"
+                  placeholder="// Start writing or import a script..."
+                  spellCheck={false}
+                />
+            ) : (
+                <div className="flex-1 overflow-y-auto p-8 prose prose-invert prose-sm max-w-none selection:bg-zero-primary/30">
+                    <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            code: ({node, className, children, ...props}) => {
+                                const match = /language-(\w+)/.exec(className || '')
+                                return match ? (
+                                    <div className="relative group rounded-lg overflow-hidden my-4 border border-white/10 bg-black/50">
+                                        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-mono text-muted-foreground bg-black/50 px-2 py-1 rounded">
+                                            {match[1]}
+                                        </div>
+                                        <pre className={`!m-0 !p-4 !bg-transparent overflow-x-auto font-mono text-sm ${className}`}>
+                                            <code className={className} {...props}>
+                                                {children}
+                                            </code>
+                                        </pre>
+                                    </div>
+                                ) : (
+                                    <code className={`${className} bg-white/10 px-1.5 py-0.5 rounded text-zero-primary font-mono text-xs`} {...props}>
+                                        {children}
+                                    </code>
+                                )
+                            },
+                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-zero-primary mb-6 pb-2 border-b border-zero-primary/30" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-xl font-bold text-foreground mt-8 mb-4" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-lg font-bold text-foreground mt-6 mb-3" {...props} />,
+                            p: ({node, ...props}) => <p className="text-foreground/80 leading-7 mb-4" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc list-outside ml-6 mb-4 space-y-1 text-foreground/80" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal list-outside ml-6 mb-4 space-y-1 text-foreground/80" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-zero-primary/50 pl-4 py-1 my-4 bg-zero-primary/5 text-muted-foreground italic" {...props} />,
+                            a: ({node, ...props}) => <a className="text-zero-primary hover:underline underline-offset-4" {...props} />,
+                        }}
+                    >
+                        {content}
+                    </ReactMarkdown>
+                </div>
+            )
+        )}
       </motion.div>
     </div>
   );
